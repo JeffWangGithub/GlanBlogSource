@@ -1,0 +1,21 @@
+---
+date: 2015-10-12 14:45
+status: public
+title: 'Android 6.0去掉HttpClient解决方式'
+categories: Android
+---
+
+android 6.0以上的系统中google已经将HttpClient对应的类全部干掉了。如果你的工程中还再使用httpClient，那么再API 23以上系统中就会挂掉，当然使用23以上的sdk也无法编译通过
+##方式一：再model的build.gradle中添加useLibrary 'org.apache.http.legacy' ，
+`注意：此中方式要求compileSdkVersion必须大于23，否则会报错。因为只有23的sdk/platforms/android-23/optional文件夹中含有这个jar。其他低版本的sdk下没有这个jar包`
+```
+android {
+    //兼容API 23干掉了httpClient，手动加入httpClient库,或者将org.apache.http.legacy.jar放到lib文件中
+    useLibrary 'org.apache.http.legacy'
+
+    compileSdkVersion 23
+    buildToolsVersion '23.0.1'
+    }
+```
+##方式二：将api 23目录下platforms中optional/org.apache.http.legacy.jar 文件copy到lib目录下，并再工程中引入此jar包。
+`特别注意：放到lib中并同时引用了minifyEnabled true优化资源，再某些华为手机上会崩溃`

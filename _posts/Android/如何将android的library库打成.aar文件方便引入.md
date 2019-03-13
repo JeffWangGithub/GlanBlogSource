@@ -1,0 +1,41 @@
+---
+date: 2015-09-11 15:00
+status: public
+title: 如何将android的library库打成.aar文件方便引入
+categories: Android
+---
+
+我们知道.jar包可以在项目中很方便的进行引入，但是.jar包有一个缺点就是无法包含资源文件，只能包含代码的部分。于是我们只能通过导入类库的形式讲代码和资源文件都引入到我们的项目中。
+Eclipse和Android Studio都可以进行Library库的引入，但是毕竟一个项目引入很多库显得还是挺臃肿复杂的。然而幸运的是Android Studio使用gradle进行构建项目，这让我们可以将Library库打成.aar文件然后再引入到我们的项目中。
+## 将类库生成.aar文件
+1. 新建或者导入Library。
+    在Android studio中新建一个项目，然后New Module，选择Library，从而创建一个Library。或者直接带入你的类库作为一个Module。
+2. 生成.aar文件
+    ###2.1 生成debug版的aar文件。
+    直接Rebuild Progect,完成之后aar文件已经生成。目录位于当前Library下的/build/outputs/aar/中。具体如下图。
+    ![](如何将android的library库打成.aar文件方便引入/1EE08B6E-B94E-49EE-9025-9BAA0BF052CB.png?r=68)
+    ### 2.2 生成release版的.aar文件.
+    进入工程所在目录，执行 **./gradlew assembleRelease**，编译成功之后会在**build/outputs/aar** 文件夹里生成aar文件    
+![](如何将android的library库打成.aar文件方便引入/A268A086-9005-49C0-A8DE-203ADF382ACF.png?r=63)  ![](如何将android的library库打成.aar文件方便引入/CDC79221-845D-4A6F-A5AB-22483A56AE13.png?r=66)
+
+## 在项目中使用.aar文件
+官方并没有给出如何使用aar的教程，但是已经有人总结出来如何使用aar了，这里我们按照别人的指示使用就ok了。
+1. 把aar文件放在一个文件目录内，比如就放在libs目录内
+2. 在app的build.gradle文件添加如下内容
+```
+//放在android{}中
+    repositories {
+        flatDir {
+            dirs 'aars' // this way we can find the .aar file in libs folder 到libs文件夹下寻找.aar包
+        }
+    }
+```
+
+3. 在项目依赖中添加aar的依赖
+```
+dependencies {
+    compile(name:'.aar文件的名字', ext:'aar')
+}
+```
+## 总结：
+其实gradle引入库就是使用的aar的形式，只不过gradle是从mavenCentral或者jcenter服务器上下载对应的aar文件的。然而，在我们国内下载这些服务器上的文件有时候是非常困难的，因此工作中讲某些库生成aar文件导入项目，这样更方便的进行多人开发，不需要没给人都去从服务下载这些文件。

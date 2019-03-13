@@ -1,0 +1,22 @@
+---
+date: 2015-05-09 19:15
+status: public
+title: '导出AndroidStudio(IntelliJ IDEA)快捷键和设置信息'
+categories: Android
+---
+
+Android Studio是基于IntelliJ IDEA平台开发的Android开发环境，我们从IDEA切换到Android Studio或者从Android Studio切换到IDEA的时候想要把自己的各种配置信息都进行同步(最主要的时配置信息)是一个非常重要事情。
+
+------------------------------------------------
+
+本人从Android Studio正式版开始就一直使用其进行开发。然而，最近想要使用IntellJ IDEA，于是进行了开发环境的切换。但是，我并没有使用Android Studio的默认快捷键，而是使用Eclipse的那一套快捷键+一些自定义快捷键。切换到IDEA后发现很多自定义的会计还需要自己再次进行自定义，这可是一个非常麻烦的事情。于是今天研究了一下如何将Android Studio的配置信息进行导出。方式如下：
+## 导出Android Studio设置信息
+`Android Studio的设置信息保存在/Users/MLS/Library/Preferences/AndroidStudio目录中`
+1 打开Android Studio进入Configure 选择Export Settings。此时Android Studio会将Settings信息自动打包成.jar文件进行导出。
+![](导出AndroidStudio(Intellij IDEA)快捷键和设置信息/Android Studio Export Settings.gif)
+2 打开IntellJ IDEA 进入Configure 选择Import Settings。将上一步导出的.jar文件导入即可。
+![](导出AndroidStudio(Intellij IDEA)快捷键和设置信息/IntellJ IDEA Settings.gif)
+OK，大功告成，打开IntellJ IDEA，进行享受吧，快捷键和设置跟原来一样，不在有陌生感。
+
+## 将IntellJ IDEA设置信息导入Android Studio环境
+步骤跟上边相同，自己设置一下就OK。

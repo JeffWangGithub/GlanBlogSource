@@ -1,0 +1,117 @@
+---
+date: 2016-03-21 16:03
+status: public
+title: AOP编程之AspectJ与Patch
+categories: Android
+---
+
+### AOP---AspectJ简介
+相关文章
+- 简介入门：[http://blog.csdn.net/kanglix1an/article/details/43764801?foxhandler=RssReadRenderProcessHandler](http://blog.csdn.net/kanglix1an/article/details/43764801?foxhandler=RssReadRenderProcessHandler)
+- 官方网站：
+[http://www.eclipse.org/aspectj/docs.php](http://www.eclipse.org/aspectj/docs.php)
+- patch使用到的aop知识
+[http://blog.csdn.net/zl3450341/article/details/7673950](http://blog.csdn.net/zl3450341/article/details/7673950)
+- 优势：
+
+```
+ 1. 发生在编译时期, 因此效率不是问题。由于是编译时期进行注入，所有效率不是大问题，现在比较流行的注入框架很多都是编译时期来处理的，这样比运行时要高效.
+ 2. 完全兼容java语言语法。即又自己的语法关键字，又可以完全使用java 语言关键字，与java 一起使用绝逼是吊炸天。
+ 3. 最低的侵入性。对原生代码的形如行很低。
+ 
+```
+
+### 代码介绍实现思路
+关键点：1.patch类的剥离；2. 混淆导致的问题；
+
+
+### patch打包步骤
+patch打包步骤
+1. 将发版时候的mapping.txt 复制到当前目录
+确认当前目录AndroidManifest.xml里面的android:versionCode以及ndroid:versionName跟线上版本一致
+2. 目前暂时使用Android插件'com.android.tools.build:gradle:1.3.0'版本，更改buildscript中的android插件版本本为1.3.0
+3. 假设要打patch的类为xx.java 在同目录创建名字为xxPatch.java的patch文件（尽量这样子 同包可以通过非反射方式使用原有类的更多功能）
+4. patch的一个demo
+
+    ```
+    public class PicShowFragmentPatch {
+        private String TAG = "PicShowFragmentPatch";
+    
+        private PicShowFragment mTarget;
+    
+        public void setTarget(PicShowFragment target) {
+            mTarget = target;
+        }
+    
+        @PatchAnnotation(value = "public void com.netease.nr.biz.pics.PicShowFragment.onCreate(android.os.Bundle)", intercept = "after")
+        public void onCreate(android.os.Bundle bundle){
+            Toast.makeText(mTarget.getContext(), "onCreate patch stat", Toast.LENGTH_LONG).show();
+        }
+    
+        @PatchAnnotation(value = "public void com.netease.nr.biz.pics.PicShowFragment.onViewCreated(android.view.View, android.os.Bundle)", intercept = "after")
+        public void onViewCreated(android.view.View view,android.os.Bundle b){
+            Toast.makeText(mTarget.getContext(), "onViewCreated patch stat", Toast.LENGTH_LONG).show();
+    
+        }
+    
+        /**注意：如果需打patch的类被混淆过 @PatchAnnotation 的信息需要填写混淆过之后的对应路径
+         * #before  先执行patch代码逻辑 再执行原代码逻辑
+         * #replace 只执行patch代码逻辑
+         * #after	 先执行原代码逻辑  再执行patch代码逻辑 
+         */
+        @PatchAnnotation(value = "public void com.netease.nr.biz.pics.PicShowFragment.onLocalLoadFinished(java.lang.Object)", intercept = "after")
+        public void onLocalLoadFinished(Object object){
+            Toast.makeText(mTarget.getContext(), "onLocalLoadFinished patch stat", Toast.LENGTH_LONG).show();
+            try {
+                //修改本地的数据源，变味全景图片
+                List<Map<String, Object>> list = (List<Map<String, Object>>) ReflectUtil.getFieldValue(mTarget, "w");
+                if(list != null){
+                    Logger.d("PicShowFragmentPatch", "list.size() ==" + list.size());
+                    for (int i = 0; i < list.size(); i++) {
+                        Map<String, Object> map = list.get(i);
+                        map.put(PicShowModel.PAPA_PANO_IMG_URL, map.get(PicShowModel.PARA_IMG_URL));
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    
+        @PatchAnnotation(value = "private void com.netease.nr.biz.pics.PicShowFragment.initAdapter()",intercept = "before")
+        private void initAdapter() {
+            Toast.makeText(mTarget.getContext(), "initAdapter patch before", Toast.LENGTH_LONG).show();
+        }
+    }   
+    ```
+5. studio 菜单项 Build 依次执行Clean Project,Generate Signed Apk(选patch)
+6. 将导出的apk 重命名,并进行本地验证
+7. 在本地测试patch包的方式：将patch包放到"/sdcard/netease/test_patch.apk"目录下，并且命名必须是test_patch.apk
+8. 上传服务器进行验证
+
+### 需要注意的小细节
+- 有关内部类和成员变量私有化影响效率
+- 有关混淆配置的介绍 [http://www.kaiyuanba.cn/html/1/131/138/7820.htm](http://www.kaiyuanba.cn/html/1/131/138/7820.htm)
+
+- 打patch包的步骤：
+```
+1. copy mapping.txt文件到所需目录
+2. clean工程
+3. 打patch包
+```
+步骤不能变化，否则打出来的patch包会又问题
+
+- 发版时必须保存编译的mapping文件
+- 引入    useLibrary 'org.apache.http.legacy'包导致补丁能拦截此包中类名中含有patch的类
+- 打patch复杂度搞，但是稳定性好，不受android版本限制
+
+### AspectJ相关小知识
+AspectJ切面变成学习blog地址：
+[http://blog.csdn.net/column/details/aspectj.html](http://blog.csdn.net/column/details/aspectj.html)
+1. AspectJ的Execution表达式。execution捕获的则是执行点,
+另外还有一个call表示调用的地方，execution标识执行的地点。
+- call与execution的区别请参考[http://blog.csdn.net/zl3450341/article/details/7673960](http://blog.csdn.net/zl3450341/article/details/7673960)
+
+- Execution表达式相关内容请参考[http://blog.csdn.net/yakoo5/article/details/17001381](http://blog.csdn.net/yakoo5/article/details/17001381)
+
+### 题外话
+类插件化

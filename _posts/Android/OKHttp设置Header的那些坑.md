@@ -1,0 +1,10 @@
+---
+title: OKHttp设置Header的那些坑
+date: 2017-06-21 13:23:12
+tags: okhttp, header
+categories: Android
+---
+项目中网络底层库使用的okhttp，但是上层使用的Volley和glide；于是就设计的到了通用的请求header设置。于是通过Interceptor给设置的统一的header，但是okhttp的api确实有点坑啊。上线后发现图片的请求有两个UA，而且两个UA一个是我们设置的一个是glide默认的。
+排查发现我们调用的Request.Builder.addHeader(k, v) 这个api是添加header，不会移除调之前有的header信息，比如设置UA，glide库设置了一个默认值，而我们又调用了这个api，这就产生了两个重复的UA。 
+正确的api是调用Request.Builder.header(k, v)来设置header，这个api会覆盖之前已有的header。
+也可以先通过Request.Builder.removeHeader(K)先移除，然后再调用addHeader(K, V)
